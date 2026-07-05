@@ -1,0 +1,1 @@
+{"name":"reportroom-docs-worker","private":true,"scripts":{"deploy":"wrangler deploy"}}

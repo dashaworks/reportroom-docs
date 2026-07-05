@@ -1,0 +1,15 @@
+# ReportRoom
+
+> Publishing layer AI agents call directly: one API/MCP call -> a beautiful, analytics-instrumented live URL, with per-viewer analytics reported back.
+
+## Docs
+- [REST API reference](https://docs.reportroom.io/api.md): endpoints, auth, publish (Mode A HTML / Mode B markdown), analytics
+- [MCP server](https://docs.reportroom.io/mcp.md): Streamable HTTP endpoint, tools, Claude Code setup
+
+## Endpoints
+- API base: https://api.reportroom.io
+- MCP: https://mcp.reportroom.io/mcp
+
+## Quickstart
+- MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, then publish
+- REST: POST /v1/signup {email} -> api_key ; POST /v1/sites {content, content_format:"markdown", type:"deck", slug} with Authorization: Bearer
