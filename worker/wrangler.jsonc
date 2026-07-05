@@ -2,6 +2,13 @@
   "name": "reportroom-docs",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-01",
-  "observability": { "enabled": true },
-  "routes": [{ "pattern": "docs.reportroom.io", "custom_domain": true }]
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "docs.reportroom.io/*",
+      "zone_name": "reportroom.io"
+    }
+  ]
 }
