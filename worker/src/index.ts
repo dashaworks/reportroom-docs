@@ -37,9 +37,13 @@ pre{background:var(--ink);color:var(--ivory);border-radius:12px;padding:18px 20p
 pre code{background:none;border:none;color:inherit;padding:0}
 .pill{display:inline-block;background:var(--banana);color:var(--ink);border-radius:999px;padding:.15em .7em;font-size:12px;font-weight:700;margin-left:8px}
 .method{display:inline-block;background:var(--cyan);color:var(--ink);border-radius:6px;padding:.05em .5em;font-weight:700;font-size:.85em}
-table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px}
-th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--grey)}
-th{color:var(--mute);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.tbl{overflow-x:auto;margin:18px 0;border:1px solid var(--grey);border-radius:12px;background:#fff}
+table{border-collapse:collapse;width:100%;min-width:540px;font-size:14.5px}
+th,td{text-align:left;padding:13px 18px;border-bottom:1px solid var(--grey);vertical-align:top}
+table tr:last-child td{border-bottom:none}
+tbody tr:nth-child(even){background:#fbfbf3}
+th{color:var(--mute);font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:#fff}
+td:first-child{white-space:nowrap}
 footer{margin-top:56px;border-top:1px solid var(--grey);padding-top:20px;color:var(--mute);font-size:13px}
 ul{padding-left:20px}
 </style></head><body><div class="wrap">
@@ -66,8 +70,9 @@ curl -sX POST https://api.reportroom.io/v1/sites \\
 <p>Bearer API key: <code>Authorization: Bearer rr_live_…</code> (from <code>/v1/signup</code> or the MCP <code>create_account</code> tool; shown once). New accounts are <b>unverified</b> — sites publish to <code>&lt;slug&gt;.rrpreview.com</code> with <code>noindex</code> until you verify your email, then auto-migrate to <code>reportroom.io</code>.</p>
 
 <h2>REST endpoints</h2>
-<table>
-<tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+<div class="tbl"><table>
+<thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+<tbody>
 <tr><td><span class="method">POST</span></td><td>/v1/signup</td><td>Create account, get API key</td></tr>
 <tr><td><span class="method">GET</span></td><td>/v1/verify?token=</td><td>Verify email, migrate sites</td></tr>
 <tr><td><span class="method">POST</span></td><td>/v1/sites</td><td>Publish/update (idempotent on slug)</td></tr>
@@ -76,14 +81,15 @@ curl -sX POST https://api.reportroom.io/v1/sites \\
 <tr><td><span class="method">POST</span></td><td>/v1/lint</td><td>Pre-flight check HTML</td></tr>
 <tr><td><span class="method">GET</span></td><td>/v1/design-system</td><td>Tokens, components, rules</td></tr>
 <tr><td><span class="method">POST</span></td><td>/v1/report-abuse</td><td>Report a page</td></tr>
-</table>
+</tbody></table></div>
 
 <h3>Publish body</h3>
 <p>Provide <b>either</b> <code>html</code> (Mode A — self-contained HTML; call <code>get_design_system</code> first) <b>or</b> <code>content</code> + <code>content_format:"markdown"</code> + <code>type:"deck"|"report"</code> (Mode B). <code>slug</code> is optional and idempotent. Rich charts: embed <code>&lt;script type="application/json" data-qd-chart&gt;{…ECharts option…}&lt;/script&gt;</code> — rendered to static SVG at publish.</p>
 
 <h2>MCP tools</h2>
-<table>
-<tr><th>Tool</th><th>Purpose</th><th>Auth</th></tr>
+<div class="tbl"><table>
+<thead><tr><th>Tool</th><th>Purpose</th><th>Auth</th></tr></thead>
+<tbody>
 <tr><td>create_account</td><td>Bootstrap a free account + API key</td><td>no</td></tr>
 <tr><td>get_design_system</td><td>Tokens + snippets + rules (call first)</td><td>no</td></tr>
 <tr><td>list_themes</td><td>Available themes</td><td>no</td></tr>
@@ -92,7 +98,7 @@ curl -sX POST https://api.reportroom.io/v1/sites \\
 <tr><td>list_sites</td><td>List your sites</td><td>yes</td></tr>
 <tr><td>get_analytics</td><td>Views + a summary to relay</td><td>yes</td></tr>
 <tr><td>account_status</td><td>Tier, limits, verify</td><td>yes</td></tr>
-</table>
+</tbody></table></div>
 <p>Recommended flow: <code>get_design_system</code> → author HTML → <code>lint_document</code> → <code>publish</code> → <code>get_analytics</code>.</p>
 
 <footer>© ReportRoom · a She Just Works company · source: <a href="https://github.com/dashaworks/reportroom-docs">github.com/dashaworks/reportroom-docs</a></footer>
