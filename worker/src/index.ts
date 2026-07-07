@@ -8,10 +8,13 @@ const LLMS = `# ReportRoom
 - MCP: https://docs.reportroom.io/mcp
 ## Endpoints
 - API base: https://api.reportroom.io
-- MCP: https://mcp.reportroom.io/mcp
+- MCP: https://mcp.reportroom.io/mcp (OAuth 2.1 for claude.ai connectors, or Bearer rr_live_ key for Claude Code)
+## URL model
+- Each account gets a handle (subdomain), auto-generated at signup, renameable via POST /v1/handle or the set_handle tool. Published URLs look like https://<handle>.reportroom.io/<slug>. slug is unique per account; re-publishing updates in place.
+- Unverified accounts serve at https://<handle>.rrpreview.com/<slug> (noindex); on email verification all sites migrate to <handle>.reportroom.io (old links 301-redirect).
 ## Quickstart
 - MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, then publish
-- REST: POST /v1/signup {email} -> api_key ; POST /v1/sites {content, content_format:"markdown", type:"deck", slug}
+- REST: POST /v1/signup {email} -> api_key ; POST /v1/sites {content, content_format:"markdown", type:"deck", slug} with Authorization: Bearer -> url https://<handle>.reportroom.io/<slug>
 `;
 
 const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -55,6 +58,7 @@ ul{padding-left:20px}
 <h2>Quickstart <span class="pill">MCP</span></h2>
 <pre><code>claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp</code></pre>
 <p>Then call the <code>create_account</code> tool, save the API key it returns, and use <code>publish</code>.</p>
+<p>For <b>claude.ai</b> and other OAuth connectors, just add <code>https://mcp.reportroom.io/mcp</code> as a remote connector — ReportRoom is a full OAuth 2.1 authorization server, so sign-in is automatic and there's no key to paste.</p>
 
 <h2>Quickstart <span class="pill">REST</span></h2>
 <pre><code># 1. get an API key (shown once)
@@ -67,7 +71,11 @@ curl -sX POST https://api.reportroom.io/v1/sites \\
   -d '{"content":"# Hello\\n\\nMy first **deck**.","content_format":"markdown","type":"deck","slug":"hello"}'</code></pre>
 
 <h2>Authentication</h2>
-<p>Bearer API key: <code>Authorization: Bearer rr_live_…</code> (from <code>/v1/signup</code> or the MCP <code>create_account</code> tool; shown once). New accounts are <b>unverified</b> — sites publish to <code>&lt;slug&gt;.rrpreview.com</code> with <code>noindex</code> until you verify your email, then auto-migrate to <code>reportroom.io</code>.</p>
+<p>Bearer API key: <code>Authorization: Bearer rr_live_…</code> (from <code>/v1/signup</code> or the MCP <code>create_account</code> tool; shown once). MCP also supports OAuth 2.1 for claude.ai connectors — see Quickstart above.</p>
+
+<h2>URL model</h2>
+<p>Every account gets a <b>handle</b> — its own subdomain, auto-generated at signup (e.g. <code>dasha-9bfc</code>) and renameable via <code>POST /v1/handle</code> or the <code>set_handle</code> tool. Published docs live at <code>https://&lt;handle&gt;.reportroom.io/&lt;slug&gt;</code>; a <code>slug</code> is unique per account (re-publishing updates in place).</p>
+<p>New accounts are <b>unverified</b> — sites publish to the preview domain <code>https://&lt;handle&gt;.rrpreview.com/&lt;slug&gt;</code> with <code>noindex</code> until you verify your email (within 24h), then auto-migrate to <code>&lt;handle&gt;.reportroom.io</code> (old preview links 301-redirect).</p>
 
 <h2>REST endpoints</h2>
 <div class="tbl"><table>
@@ -78,6 +86,8 @@ curl -sX POST https://api.reportroom.io/v1/sites \\
 <tr><td><span class="method">POST</span></td><td>/v1/sites</td><td>Publish/update (idempotent on slug)</td></tr>
 <tr><td><span class="method">GET</span></td><td>/v1/sites</td><td>List your sites</td></tr>
 <tr><td><span class="method">GET</span></td><td>/v1/sites/{slug}/analytics</td><td>Views + summary message</td></tr>
+<tr><td><span class="method">GET</span></td><td>/v1/handle</td><td>Your handle + URL base</td></tr>
+<tr><td><span class="method">POST</span></td><td>/v1/handle</td><td>Rename your subdomain</td></tr>
 <tr><td><span class="method">POST</span></td><td>/v1/lint</td><td>Pre-flight check HTML</td></tr>
 <tr><td><span class="method">GET</span></td><td>/v1/design-system</td><td>Tokens, components, rules</td></tr>
 <tr><td><span class="method">POST</span></td><td>/v1/report-abuse</td><td>Report a page</td></tr>
@@ -98,8 +108,9 @@ curl -sX POST https://api.reportroom.io/v1/sites \\
 <tr><td>list_sites</td><td>List your sites</td><td>yes</td></tr>
 <tr><td>get_analytics</td><td>Views + a summary to relay</td><td>yes</td></tr>
 <tr><td>account_status</td><td>Tier, limits, verify</td><td>yes</td></tr>
+<tr><td>set_handle</td><td>Rename your subdomain (docs move, old links redirect)</td><td>yes</td></tr>
 </tbody></table></div>
-<p>Recommended flow: <code>get_design_system</code> → author HTML → <code>lint_document</code> → <code>publish</code> → <code>get_analytics</code>.</p>
+<p>Every tool returns human-readable text plus <code>structuredContent</code>; <code>publish</code> returns the full live <code>url</code>. Recommended flow: <code>get_design_system</code> → author HTML → <code>lint_document</code> → <code>publish</code> → <code>get_analytics</code>.</p>
 
 <footer>© ReportRoom · a She Just Works company · source: <a href="https://github.com/dashaworks/reportroom-docs">github.com/dashaworks/reportroom-docs</a></footer>
 </div></body></html>`;

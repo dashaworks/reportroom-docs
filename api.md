@@ -9,10 +9,12 @@ Authorization: Bearer rr_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 Get one from `POST /v1/signup` (or the MCP `create_account` tool). Keys are shown once — store them securely. `rr_test_...` keys work against a sandbox.
 
-Errors are JSON: `{ "error": { "code": "STRING_CODE", "message": "what to do" } }`. Codes include `UNAUTHENTICATED`, `INVALID_BODY`, `INVALID_EMAIL`, `DISPOSABLE_EMAIL`, `EMAIL_EXISTS`, `INVALID_SLUG`, `SITE_NOT_FOUND`, `RATE_LIMITED`.
+Errors are JSON: `{ "error": { "code": "STRING_CODE", "message": "what to do" } }`. Codes include `UNAUTHENTICATED`, `INVALID_BODY`, `INVALID_EMAIL`, `DISPOSABLE_EMAIL`, `EMAIL_EXISTS`, `INVALID_SLUG`, `SITE_NOT_FOUND`, `RATE_LIMITED`, `HANDLE_REJECTED`.
 
-## Trust tiers
-New accounts are **unverified**: sites publish to a preview domain (`<slug>.rrpreview.com`) with `noindex`, and you have 24h to verify your email. On verification, sites auto-migrate to `<slug>.reportroom.io` (old links 301-redirect). Verified free and paid accounts publish straight to `reportroom.io`.
+## URL model & trust tiers
+Every account gets a **handle** — a subdomain, auto-generated at signup (e.g. `dasha-9bfc`) and renameable (see `POST /v1/handle`). Handles are lowercase letters/numbers/hyphens, 2–32 chars. A `slug` is unique **per account** (not global); publishing the same slug again updates in place.
+
+New accounts are **unverified**: sites publish to a preview domain (`https://<handle>.rrpreview.com/<slug>`) with `noindex`, and you have 24h to verify your email. On verification, all preview sites auto-migrate to `https://<handle>.reportroom.io/<slug>` (old preview links 301-redirect). Verified accounts publish straight to `<handle>.reportroom.io`.
 
 ---
 
@@ -26,7 +28,14 @@ Response: { "data": { "user_id": "usr_…", "org_id": "org_…",
 A verification email is sent to the address.
 
 ## GET /v1/verify?token=…
-Consumes the emailed verification token, upgrades the account to `verified`, and migrates any preview sites to `reportroom.io`.
+Consumes the emailed verification token, upgrades the account to `verified`, and migrates any preview sites to `<handle>.reportroom.io`.
+```json
+Response: { "data": { "tier": "verified",
+                      "migrated": [{ "slug": "acme-pitch",
+                                     "from": "dasha-9bfc.rrpreview.com/acme-pitch",
+                                     "to":   "dasha-9bfc.reportroom.io/acme-pitch" }],
+                      "message": "…" } }
+```
 
 ## POST /v1/sites
 Publish or update a site. **Idempotent on `slug`** — reuse a slug to update in place. Requires auth. Provide **either** `html` (Mode A) **or** `content` + `content_format` + `type` (Mode B).
@@ -34,12 +43,16 @@ Publish or update a site. **Idempotent on `slug`** — reuse a slug to update in
 Request (Mode A): { "html": "<!doctype html>…", "slug": "acme-pitch", "title": "Acme" }
 Request (Mode B): { "content": "# Title\n\nBody\n\n---\n\n## Slide 2",
                     "content_format": "markdown", "type": "deck", "slug": "acme-pitch", "theme": "vibrant" }
-Response: { "data": { "url": "https://acme-pitch.reportroom.io", "site_id": "site_…",
-                      "slug": "acme-pitch", "version": 1, "chartsRendered": 1, "message": "…" } }
+Response: { "data": { "url": "https://dasha-9bfc.reportroom.io/acme-pitch", "siteId": "site_…",
+                      "slug": "acme-pitch", "version": 1, "chartsRendered": 1, "chartErrors": [],
+                      "artifactKey": "…", "visibility": "public", "status": "live",
+                      "scan": { "verdict": "clean", "score": 0, "reasons": [] },
+                      "removalsCount": 0, "message": "…" } }
 ```
 - Mode A HTML is sanitized (scripts stripped; call `get_design_system` first for on-brand output).
 - Rich charts: embed `<script type="application/json" data-qd-chart>{…ECharts option…}</script>` — rendered to static SVG at publish.
-- `slug` optional (auto-generated if omitted). Reserved slugs (`api`, `app`, `admin`, …) are rejected.
+- `slug` optional (auto-generated if omitted). Reserved slugs (`api`, `app`, `admin`, `mcp`, `dashboard`, …) are rejected.
+- Rate limit: 120/hour.
 
 ## GET /v1/sites
 List the account's published sites. `?limit=` (default 20). Requires auth.
@@ -47,9 +60,22 @@ List the account's published sites. `?limit=` (default 20). Requires auth.
 ## GET /v1/sites/{slug}/analytics
 Per-site view stats + a ready-to-relay summary. Requires auth.
 ```json
-Response: { "data": { "slug": "acme-pitch", "url": "https://acme-pitch.reportroom.io",
+Response: { "data": { "slug": "acme-pitch", "url": "https://dasha-9bfc.reportroom.io/acme-pitch",
                       "views7d": 42, "byDay": [{ "day": "2026-07-05", "views": 8 }, …],
                       "message": "\"Acme\" got 42 views in the last 7 days…" } }
+```
+
+## GET /v1/handle
+Returns your current handle (subdomain) and its URL base. Requires auth. `url_base` uses `rrpreview.com` while unverified.
+```json
+Response: { "data": { "handle": "dasha-9bfc", "url_base": "https://dasha-9bfc.reportroom.io" } }
+```
+
+## POST /v1/handle
+Rename your subdomain. Moves all your docs to the new handle; old links redirect. Requires auth. Returns `400 HANDLE_REJECTED` if the handle is taken, invalid, or reserved.
+```json
+Request:  { "handle": "acme" }
+Response: { "data": { "handle": "acme", "moved": 3, "message": "…" } }
 ```
 
 ## POST /v1/lint
@@ -65,5 +91,5 @@ Returns the design tokens, component snippets, layout shells, and rules an agent
 ## POST /v1/report-abuse
 Report an abusive published page. No auth, rate-limited.
 ```json
-Request: { "url": "https://bad-slug.reportroom.io", "reason": "phishing" }
+Request: { "url": "https://bad-handle.reportroom.io/bad-slug", "reason": "phishing" }
 ```

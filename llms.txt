@@ -10,6 +10,10 @@
 - API base: https://api.reportroom.io
 - MCP: https://mcp.reportroom.io/mcp
 
+## URL model
+- Each account gets a handle (subdomain), auto-generated at signup, renameable via POST /v1/handle. Published URLs look like https://<handle>.reportroom.io/<slug>. slug is unique per account; re-publishing a slug updates in place.
+- Unverified accounts serve at https://<handle>.rrpreview.com/<slug> (noindex); on email verification all sites migrate to <handle>.reportroom.io (old links 301-redirect).
+
 ## Quickstart
 - MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, then publish
-- REST: POST /v1/signup {email} -> api_key ; POST /v1/sites {content, content_format:"markdown", type:"deck", slug} with Authorization: Bearer
+- REST: POST /v1/signup {email} -> api_key ; POST /v1/sites {content, content_format:"markdown", type:"deck", slug} with Authorization: Bearer -> url https://<handle>.reportroom.io/<slug>
