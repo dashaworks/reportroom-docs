@@ -18,9 +18,31 @@ claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp \
   --header "Authorization: Bearer rr_live_..."
 ```
 
-**claude.ai (and other OAuth connectors):** add `https://mcp.reportroom.io/mcp` as a
-custom/remote connector. ReportRoom is a full OAuth 2.1 authorization server, so the
-client discovers auth automatically and walks you through sign-in — no key to paste.
+**claude.ai (web & desktop):** Settings → Connectors → **Add custom connector** →
+paste `https://mcp.reportroom.io/mcp` → Connect. ReportRoom is a full OAuth 2.1
+authorization server, so the client discovers auth automatically and walks you through
+sign-in — no key to paste. (Requires a plan that allows custom connectors.)
+
+**ChatGPT:** custom MCP connectors run in **Developer mode** (Plus, Pro, Team,
+Enterprise, or Edu — not Free).
+1. Settings → **Apps & Connectors** → Advanced → turn on **Developer mode**.
+2. Settings → Connectors → **Create** → name it "ReportRoom", set the connector URL to
+   `https://mcp.reportroom.io/mcp`.
+3. Authenticate when prompted (OAuth).
+
+**Codex CLI:** add a streamable-HTTP server to `~/.codex/config.toml`, then sign in:
+```toml
+[mcp_servers.reportroom]
+url = "https://mcp.reportroom.io/mcp"
+# optional — API key instead of OAuth:
+# bearer_token_env_var = "REPORTROOM_KEY"
+```
+```bash
+codex mcp login reportroom   # OAuth sign-in
+# verify with /mcp in the Codex TUI
+```
+
+### OAuth endpoints (for connectors that discover auth automatically)
 
 - **Protected-resource metadata (RFC 9728):** `GET /.well-known/oauth-protected-resource`
 - **Authorization-server metadata (RFC 8414):** `GET /.well-known/oauth-authorization-server`

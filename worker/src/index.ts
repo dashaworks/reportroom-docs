@@ -13,6 +13,7 @@ const LLMS = `# ReportRoom
 - Each account gets a handle (subdomain), auto-generated at signup, renameable via POST /v1/handle or the set_handle tool. Published URLs look like https://<handle>.reportroom.io/<slug>. slug is unique per account; re-publishing updates in place.
 - Unverified accounts serve at https://<handle>.rrpreview.com/<slug> (noindex); on email verification all sites migrate to <handle>.reportroom.io (old links 301-redirect).
 ## Quickstart
+- Clients: add https://mcp.reportroom.io/mcp as a custom MCP connector — Claude Code (claude mcp add --transport http), claude.ai (Settings > Connectors), ChatGPT (Developer mode > Connectors), or Codex (~/.codex/config.toml [mcp_servers]). OAuth signs in automatically, or use a Bearer rr_live_ key.
 - MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, then publish
 - REST: POST /v1/signup {email} -> api_key ; POST /v1/sites {content, content_format:"markdown", type:"deck", slug} with Authorization: Bearer -> url https://<handle>.reportroom.io/<slug>
 `;
@@ -48,17 +49,39 @@ tbody tr:nth-child(even){background:#fbfbf3}
 th{color:var(--mute);font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:#fff}
 td:first-child{white-space:nowrap}
 footer{margin-top:56px;border-top:1px solid var(--grey);padding-top:20px;color:var(--mute);font-size:13px}
-ul{padding-left:20px}
+ul,ol{padding-left:22px}
+ol li{margin:4px 0}
 </style></head><body><div class="wrap">
 <p class="eyebrow">Developer Docs</p>
 <h1>ReportRoom API &amp; MCP</h1>
 <p>The publishing layer AI agents call directly: one call turns a deck or report into a beautiful, tracked live URL — and reports back who viewed it.</p>
 <p><a href="https://reportroom.io">reportroom.io</a> · API <code>https://api.reportroom.io</code> · MCP <code>https://mcp.reportroom.io/mcp</code> · <a href="/llms.txt">llms.txt</a></p>
 
-<h2>Quickstart <span class="pill">MCP</span></h2>
+<h2>Add the connector <span class="pill">MCP</span></h2>
+<p>The MCP endpoint is <code>https://mcp.reportroom.io/mcp</code> (Streamable HTTP). It's a full OAuth 2.1 authorization server, so most clients walk you through sign-in automatically — or you can pass an <code>rr_live_</code> API key as a Bearer header. New here? Call the <code>create_account</code> tool once to get a key.</p>
+
+<h3>Claude Code</h3>
 <pre><code>claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp</code></pre>
-<p>Then call the <code>create_account</code> tool, save the API key it returns, and use <code>publish</code>.</p>
-<p>For <b>claude.ai</b> and other OAuth connectors, just add <code>https://mcp.reportroom.io/mcp</code> as a remote connector — ReportRoom is a full OAuth 2.1 authorization server, so sign-in is automatic and there's no key to paste.</p>
+<p>Then call <code>create_account</code> in a session — or pass a key directly with <code>--header "Authorization: Bearer rr_live_…"</code>.</p>
+
+<h3>Claude.ai (web &amp; desktop)</h3>
+<p>Settings → Connectors → <b>Add custom connector</b> → paste <code>https://mcp.reportroom.io/mcp</code> → Connect. OAuth signs you in automatically; no key to paste. (Requires a plan that allows custom connectors.)</p>
+
+<h3>ChatGPT</h3>
+<p>Custom MCP connectors run in <b>Developer mode</b>, available on Plus, Pro, Team, Enterprise, and Edu (not Free).</p>
+<ol>
+<li>Settings → <b>Apps &amp; Connectors</b> → Advanced → turn on <b>Developer mode</b>.</li>
+<li>Settings → Connectors → <b>Create</b> → name it "ReportRoom" and set the connector URL to <code>https://mcp.reportroom.io/mcp</code>.</li>
+<li>Authenticate when prompted (OAuth).</li>
+</ol>
+
+<h3>Codex CLI</h3>
+<p>Add a streamable-HTTP server to <code>~/.codex/config.toml</code>:</p>
+<pre><code>[mcp_servers.reportroom]
+url = "https://mcp.reportroom.io/mcp"
+# optional — use an API key instead of OAuth:
+# bearer_token_env_var = "REPORTROOM_KEY"</code></pre>
+<p>Then sign in with <code>codex mcp login reportroom</code>, and verify with <code>/mcp</code> in the Codex TUI.</p>
 
 <h2>Quickstart <span class="pill">REST</span></h2>
 <pre><code># 1. get an API key (shown once)
