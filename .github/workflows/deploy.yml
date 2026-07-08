@@ -2,7 +2,7 @@ name: Deploy docs
 on:
   push:
     branches: [main]
-    paths: ['worker/**', '.github/workflows/deploy.yml']
+    paths: ['worker/**', 'api.md', 'mcp.md', 'llms.txt', '.github/workflows/deploy.yml']
 concurrency:
   group: deploy-docs
 jobs:
@@ -23,4 +23,7 @@ jobs:
         with: { node-version: 22 }
       - if: steps.gate.outputs.deploy == 'true'
         working-directory: worker
-        run: npx wrangler@^4 deploy
+        run: |
+          npm ci
+          npm run gen
+          npx wrangler@^4 deploy

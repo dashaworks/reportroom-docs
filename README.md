@@ -33,5 +33,13 @@ curl -sX POST https://api.reportroom.io/v1/sites \
 
 See [`api.md`](./api.md) and [`mcp.md`](./mcp.md) for the full reference.
 
+## Editing the docs
+
+`api.md`, `mcp.md`, and `llms.txt` at the repo root are the **single source of truth**.
+The docs.reportroom.io worker page is generated from them: run `npm run gen` in
+`worker/` to regenerate `worker/src/content.generated.ts` (never edit that file by
+hand — it's overwritten, and `npm run check` fails CI-style if it drifts). Deploys
+(`npm run deploy` and the GitHub Action) regenerate automatically.
+
 ---
 © ReportRoom · a She Just Works company · content licensed CC-BY-4.0

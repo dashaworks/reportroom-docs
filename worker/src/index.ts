@@ -1,22 +1,12 @@
-/** docs.reportroom.io — on-brand single-page developer docs + raw markdown/llms.txt. */
-const MD: Record<string, string> = {}; // markdown served from KV/inline is optional; llms.txt inlined below
-
-const LLMS = `# ReportRoom
-> Publishing layer AI agents call directly: one API/MCP call -> a beautiful, analytics-instrumented live URL.
-## Docs
-- REST API: https://docs.reportroom.io/api
-- MCP: https://docs.reportroom.io/mcp
-## Endpoints
-- API base: https://api.reportroom.io
-- MCP: https://mcp.reportroom.io/mcp (OAuth 2.1 for claude.ai connectors, or Bearer rr_live_ key for Claude Code)
-## URL model
-- Each account gets a handle (subdomain), auto-generated at signup, renameable via POST /v1/handle or the set_handle tool. Published URLs look like https://<handle>.reportroom.io/<slug>. slug is unique per account; re-publishing updates in place.
-- Unverified accounts serve at https://<handle>.rrpreview.com/<slug> (noindex); on email verification all sites migrate to <handle>.reportroom.io (old links 301-redirect).
-## Quickstart
-- Clients: add https://mcp.reportroom.io/mcp as a custom MCP connector — Claude Code (claude mcp add --transport http), claude.ai (Settings > Connectors), ChatGPT (Developer mode > Connectors), or Codex (~/.codex/config.toml [mcp_servers]). OAuth signs in automatically, or use a Bearer rr_live_ key.
-- MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, then publish
-- REST: POST /v1/signup {email} -> api_key ; POST /v1/sites {content, content_format:"markdown", type:"deck", slug} with Authorization: Bearer -> url https://<handle>.reportroom.io/<slug>
-`;
+/**
+ * docs.reportroom.io — on-brand single-page developer docs + llms.txt.
+ *
+ * Content comes from the repo-root markdown (api.md, mcp.md, llms.txt) — the
+ * single source of truth — compiled at build time into content.generated.ts
+ * by scripts/gen-content.mjs (`npm run gen`, wired into `npm run deploy` and CI).
+ * Only the page shell (head, CSS, hero, footer) is hand-authored here.
+ */
+import { LLMS, BODY } from "./content.generated";
 
 const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -34,6 +24,8 @@ body{font-family:'Inter Tight',sans-serif;background:var(--ivory);color:var(--in
 h1{font-size:clamp(38px,6vw,64px);line-height:.98;letter-spacing:-.03em;font-weight:800;margin:10px 0 6px}
 h2{font-size:clamp(24px,3.5vw,34px);letter-spacing:-.02em;margin:44px 0 4px;border-top:2px solid var(--grey);padding-top:28px}
 h3{font-size:19px;margin:22px 0 6px}
+h4{font-size:16px;margin:18px 0 6px}
+hr{border:none;border-top:1px solid var(--grey);margin:32px 0 0}
 p,li{max-width:70ch;color:#33312a}
 a{color:var(--coral);text-decoration:none}a:hover{text-decoration:underline}
 code{background:#fff;border:1px solid var(--grey);border-radius:6px;padding:.08em .35em;font-family:ui-monospace,Menlo,monospace;font-size:.9em}
@@ -57,83 +49,7 @@ ol li{margin:4px 0}
 <p>The publishing layer AI agents call directly: one call turns a deck or report into a beautiful, tracked live URL — and reports back who viewed it.</p>
 <p><a href="https://reportroom.io">reportroom.io</a> · API <code>https://api.reportroom.io</code> · MCP <code>https://mcp.reportroom.io/mcp</code> · <a href="/llms.txt">llms.txt</a></p>
 
-<h2>Add the connector <span class="pill">MCP</span></h2>
-<p>The MCP endpoint is <code>https://mcp.reportroom.io/mcp</code> (Streamable HTTP). It's a full OAuth 2.1 authorization server, so most clients walk you through sign-in automatically — or you can pass an <code>rr_live_</code> API key as a Bearer header. New here? Call the <code>create_account</code> tool once to get a key.</p>
-
-<h3>Claude Code</h3>
-<pre><code>claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp</code></pre>
-<p>Then call <code>create_account</code> in a session — or pass a key directly with <code>--header "Authorization: Bearer rr_live_…"</code>.</p>
-
-<h3>Claude.ai (web &amp; desktop)</h3>
-<p>Settings → Connectors → <b>Add custom connector</b> → paste <code>https://mcp.reportroom.io/mcp</code> → Connect. OAuth signs you in automatically; no key to paste. (Requires a plan that allows custom connectors.)</p>
-
-<h3>ChatGPT</h3>
-<p>Custom MCP connectors run in <b>Developer mode</b>, available on Plus, Pro, Team, Enterprise, and Edu (not Free).</p>
-<ol>
-<li>Settings → <b>Apps &amp; Connectors</b> → Advanced → turn on <b>Developer mode</b>.</li>
-<li>Settings → Connectors → <b>Create</b> → name it "ReportRoom" and set the connector URL to <code>https://mcp.reportroom.io/mcp</code>.</li>
-<li>Authenticate when prompted (OAuth).</li>
-</ol>
-
-<h3>Codex CLI</h3>
-<p>Add a streamable-HTTP server to <code>~/.codex/config.toml</code>:</p>
-<pre><code>[mcp_servers.reportroom]
-url = "https://mcp.reportroom.io/mcp"
-# optional — use an API key instead of OAuth:
-# bearer_token_env_var = "REPORTROOM_KEY"</code></pre>
-<p>Then sign in with <code>codex mcp login reportroom</code>, and verify with <code>/mcp</code> in the Codex TUI.</p>
-
-<h2>Quickstart <span class="pill">REST</span></h2>
-<pre><code># 1. get an API key (shown once)
-curl -sX POST https://api.reportroom.io/v1/signup \\
-  -H 'content-type: application/json' -d '{"email":"you@example.com"}'
-
-# 2. publish a markdown deck
-curl -sX POST https://api.reportroom.io/v1/sites \\
-  -H "authorization: Bearer rr_live_..." -H 'content-type: application/json' \\
-  -d '{"content":"# Hello\\n\\nMy first **deck**.","content_format":"markdown","type":"deck","slug":"hello"}'</code></pre>
-
-<h2>Authentication</h2>
-<p>Bearer API key: <code>Authorization: Bearer rr_live_…</code> (from <code>/v1/signup</code> or the MCP <code>create_account</code> tool; shown once). MCP also supports OAuth 2.1 for claude.ai connectors — see Quickstart above.</p>
-
-<h2>URL model</h2>
-<p>Every account gets a <b>handle</b> — its own subdomain, auto-generated at signup (e.g. <code>dasha-9bfc</code>) and renameable via <code>POST /v1/handle</code> or the <code>set_handle</code> tool. Published docs live at <code>https://&lt;handle&gt;.reportroom.io/&lt;slug&gt;</code>; a <code>slug</code> is unique per account (re-publishing updates in place).</p>
-<p>New accounts are <b>unverified</b> — sites publish to the preview domain <code>https://&lt;handle&gt;.rrpreview.com/&lt;slug&gt;</code> with <code>noindex</code> until you verify your email (within 24h), then auto-migrate to <code>&lt;handle&gt;.reportroom.io</code> (old preview links 301-redirect).</p>
-
-<h2>REST endpoints</h2>
-<div class="tbl"><table>
-<thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
-<tbody>
-<tr><td><span class="method">POST</span></td><td>/v1/signup</td><td>Create account, get API key</td></tr>
-<tr><td><span class="method">GET</span></td><td>/v1/verify?token=</td><td>Verify email, migrate sites</td></tr>
-<tr><td><span class="method">POST</span></td><td>/v1/sites</td><td>Publish/update (idempotent on slug)</td></tr>
-<tr><td><span class="method">GET</span></td><td>/v1/sites</td><td>List your sites</td></tr>
-<tr><td><span class="method">GET</span></td><td>/v1/sites/{slug}/analytics</td><td>Views + summary message</td></tr>
-<tr><td><span class="method">GET</span></td><td>/v1/handle</td><td>Your handle + URL base</td></tr>
-<tr><td><span class="method">POST</span></td><td>/v1/handle</td><td>Rename your subdomain</td></tr>
-<tr><td><span class="method">POST</span></td><td>/v1/lint</td><td>Pre-flight check HTML</td></tr>
-<tr><td><span class="method">GET</span></td><td>/v1/design-system</td><td>Tokens, components, rules</td></tr>
-<tr><td><span class="method">POST</span></td><td>/v1/report-abuse</td><td>Report a page</td></tr>
-</tbody></table></div>
-
-<h3>Publish body</h3>
-<p>Provide <b>either</b> <code>html</code> (Mode A — self-contained HTML; call <code>get_design_system</code> first) <b>or</b> <code>content</code> + <code>content_format:"markdown"</code> + <code>type:"deck"|"report"</code> (Mode B). <code>slug</code> is optional and idempotent. Rich charts: embed <code>&lt;script type="application/json" data-qd-chart&gt;{…ECharts option…}&lt;/script&gt;</code> — rendered to static SVG at publish.</p>
-
-<h2>MCP tools</h2>
-<div class="tbl"><table>
-<thead><tr><th>Tool</th><th>Purpose</th><th>Auth</th></tr></thead>
-<tbody>
-<tr><td>create_account</td><td>Bootstrap a free account + API key</td><td>no</td></tr>
-<tr><td>get_design_system</td><td>Tokens + snippets + rules (call first)</td><td>no</td></tr>
-<tr><td>list_themes</td><td>Available themes</td><td>no</td></tr>
-<tr><td>lint_document</td><td>Pre-flight check HTML</td><td>no</td></tr>
-<tr><td>publish</td><td>Publish/update a deck or report</td><td>yes</td></tr>
-<tr><td>list_sites</td><td>List your sites</td><td>yes</td></tr>
-<tr><td>get_analytics</td><td>Views + a summary to relay</td><td>yes</td></tr>
-<tr><td>account_status</td><td>Tier, limits, verify</td><td>yes</td></tr>
-<tr><td>set_handle</td><td>Rename your subdomain (docs move, old links redirect)</td><td>yes</td></tr>
-</tbody></table></div>
-<p>Every tool returns human-readable text plus <code>structuredContent</code>; <code>publish</code> returns the full live <code>url</code>. Recommended flow: <code>get_design_system</code> → author HTML → <code>lint_document</code> → <code>publish</code> → <code>get_analytics</code>.</p>
+${BODY}
 
 <footer>© ReportRoom · a She Just Works company · source: <a href="https://github.com/dashaworks/reportroom-docs">github.com/dashaworks/reportroom-docs</a></footer>
 </div></body></html>`;

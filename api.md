@@ -2,6 +2,18 @@
 
 Base URL: `https://api.reportroom.io` · Versioned under `/v1`.
 
+## Quickstart
+```bash
+# 1. get an API key (shown once)
+curl -sX POST https://api.reportroom.io/v1/signup \
+  -H 'content-type: application/json' -d '{"email":"you@example.com"}'
+
+# 2. publish a markdown deck
+curl -sX POST https://api.reportroom.io/v1/sites \
+  -H "authorization: Bearer rr_live_..." -H 'content-type: application/json' \
+  -d '{"content":"# Hello\n\nMy first **deck**.","content_format":"markdown","type":"deck","slug":"hello"}'
+```
+
 ## Authentication
 Most endpoints require an API key as a bearer token:
 ```

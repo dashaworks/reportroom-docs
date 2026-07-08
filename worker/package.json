@@ -1,1 +1,12 @@
-{"name":"reportroom-docs-worker","private":true,"scripts":{"deploy":"wrangler deploy"}}
+{
+  "name": "reportroom-docs-worker",
+  "private": true,
+  "scripts": {
+    "gen": "node scripts/gen-content.mjs",
+    "check": "npm run gen && git diff --exit-code -- src/content.generated.ts",
+    "deploy": "npm run gen && wrangler deploy"
+  },
+  "devDependencies": {
+    "marked": "^18.0.5"
+  }
+}
