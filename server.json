@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
   "name": "io.reportroom/reportroom",
-  "description": "Publish beautiful client decks & reports to live URLs and get per-viewer analytics back — the one-call, agent-native DocSend.",
+  "description": "Publish beautiful client decks & reports to live URLs and get aggregate view analytics back — the one-call, agent-native DocSend.",
   "version": "0.1.0",
   "repository": {
     "url": "https://github.com/dashaworks/reportroom-docs",

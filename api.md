@@ -9,7 +9,7 @@ curl -sX POST https://api.reportroom.io/v1/signup \
   -H 'content-type: application/json' -d '{"email":"you@example.com"}'
 
 # 2. publish a markdown deck
-curl -sX POST https://api.reportroom.io/v1/sites \
+curl -sX POST https://api.reportroom.io/v1/documents \
   -H "authorization: Bearer rr_live_..." -H 'content-type: application/json' \
   -d '{"content":"# Hello\n\nMy first **deck**.","content_format":"markdown","type":"deck","slug":"hello"}'
 ```
@@ -21,12 +21,12 @@ Authorization: Bearer rr_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 Get one from `POST /v1/signup` (or the MCP `create_account` tool). Keys are shown once — store them securely. `rr_test_...` keys work against a sandbox.
 
-Errors are JSON: `{ "error": { "code": "STRING_CODE", "message": "what to do" } }`. Codes include `UNAUTHENTICATED`, `INVALID_BODY`, `INVALID_EMAIL`, `DISPOSABLE_EMAIL`, `EMAIL_EXISTS`, `INVALID_SLUG`, `SITE_NOT_FOUND`, `RATE_LIMITED`, `HANDLE_REJECTED`.
+Errors are JSON: `{ "error": { "code": "STRING_CODE", "message": "what to do" } }`. Codes include `UNAUTHENTICATED`, `INVALID_BODY`, `INVALID_EMAIL`, `DISPOSABLE_EMAIL`, `EMAIL_EXISTS`, `INVALID_SLUG`, `DOCUMENT_NOT_FOUND`, `RATE_LIMITED`, `HANDLE_REJECTED`.
 
 ## URL model & trust tiers
 Every account gets a **handle** — a subdomain, auto-generated at signup (e.g. `dasha-9bfc`) and renameable (see `POST /v1/handle`). Handles are lowercase letters/numbers/hyphens, 2–32 chars. A `slug` is unique **per account** (not global); publishing the same slug again updates in place.
 
-New accounts are **unverified**: sites publish to a preview domain (`https://<handle>.rrpreview.com/<slug>`) with `noindex`, and you have 24h to verify your email. On verification, all preview sites auto-migrate to `https://<handle>.reportroom.io/<slug>` (old preview links 301-redirect). Verified accounts publish straight to `<handle>.reportroom.io`.
+New accounts are **unverified**: documents publish to a preview domain (`https://<handle>.rrpreview.com/<slug>`) with `noindex`, and you have 24h to verify your email. On verification, all preview documents auto-migrate to `https://<handle>.reportroom.io/<slug>` (old preview links 301-redirect). Verified accounts publish straight to `<handle>.reportroom.io`.
 
 ---
 
@@ -40,7 +40,7 @@ Response: { "data": { "user_id": "usr_…", "org_id": "org_…",
 A verification email is sent to the address.
 
 ## GET /v1/verify?token=…
-Consumes the emailed verification token, upgrades the account to `verified`, and migrates any preview sites to `<handle>.reportroom.io`.
+Consumes the emailed verification token, upgrades the account to `verified`, and migrates any preview documents to `<handle>.reportroom.io`.
 ```json
 Response: { "data": { "tier": "verified",
                       "migrated": [{ "slug": "acme-pitch",
@@ -49,13 +49,13 @@ Response: { "data": { "tier": "verified",
                       "message": "…" } }
 ```
 
-## POST /v1/sites
-Publish or update a site. **Idempotent on `slug`** — reuse a slug to update in place. Requires auth. Provide **either** `html` (Mode A) **or** `content` + `content_format` + `type` (Mode B).
+## POST /v1/documents
+Publish or update a document. **Idempotent on `slug`** — reuse a slug to update in place. Requires auth. Provide **either** `html` (Mode A) **or** `content` + `content_format` + `type` (Mode B).
 ```json
 Request (Mode A): { "html": "<!doctype html>…", "slug": "acme-pitch", "title": "Acme" }
 Request (Mode B): { "content": "# Title\n\nBody\n\n---\n\n## Slide 2",
                     "content_format": "markdown", "type": "deck", "slug": "acme-pitch", "theme": "vibrant" }
-Response: { "data": { "url": "https://dasha-9bfc.reportroom.io/acme-pitch", "siteId": "site_…",
+Response: { "data": { "url": "https://dasha-9bfc.reportroom.io/acme-pitch", "documentId": "doc_…",
                       "slug": "acme-pitch", "version": 1, "chartsRendered": 1, "chartErrors": [],
                       "artifactKey": "…", "visibility": "public", "status": "live",
                       "scan": { "verdict": "clean", "score": 0, "reasons": [] },
@@ -66,11 +66,11 @@ Response: { "data": { "url": "https://dasha-9bfc.reportroom.io/acme-pitch", "sit
 - `slug` optional (auto-generated if omitted). Reserved slugs (`api`, `app`, `admin`, `mcp`, `dashboard`, …) are rejected.
 - Rate limit: 120/hour.
 
-## GET /v1/sites
-List the account's published sites. `?limit=` (default 20). Requires auth.
+## GET /v1/documents
+List the account's published documents. `?limit=` (default 20). Requires auth.
 
-## GET /v1/sites/{slug}/analytics
-Per-site view stats + a ready-to-relay summary. Requires auth.
+## GET /v1/documents/{slug}/analytics
+Per-document view stats + a ready-to-relay summary. Requires auth.
 ```json
 Response: { "data": { "slug": "acme-pitch", "url": "https://dasha-9bfc.reportroom.io/acme-pitch",
                       "views7d": 42, "byDay": [{ "day": "2026-07-05", "views": 8 }, …],

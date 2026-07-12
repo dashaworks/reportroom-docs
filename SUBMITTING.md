@@ -29,6 +29,6 @@ Publish via CLI with a manifest (tools + auth = API key / OAuth). Optional manag
 Hand-reviewed directories — submit via their "Submit a server" forms with the endpoint + `server.json`.
 
 ## Listing hygiene (raises adoption)
-- 8 focused tools, each with a crisp "when to use" description and a `message` field. ✓
+- 9 focused tools, each with a crisp "when to use" description and a `message` field. ✓
 - Docs: https://docs.reportroom.io · agent index: https://docs.reportroom.io/llms.txt ✓
 - One-liner: `claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp` ✓

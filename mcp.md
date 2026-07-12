@@ -62,8 +62,8 @@ metadata above, which is what kicks off the connector's OAuth flow. Discovery an
 | `list_themes` | Available design themes | no |
 | `lint_document` | Pre-flight check HTML before publish | no |
 | `publish` | Publish/update a deck or report (Mode A `html` or Mode B `content`+`type`); idempotent on `slug`; returns the full live URL | yes |
-| `list_sites` | List your published sites | yes |
-| `get_analytics` | Per-site views + a summary you can relay to the human | yes |
+| `list_documents` | List your published documents | yes |
+| `get_analytics` | Per-document views + a summary you can relay to the human | yes |
 | `account_status` | Tier, limits, how to verify | yes |
 | `set_handle` | Rename your account's subdomain (handle); moves all your docs, old links redirect | yes |
 

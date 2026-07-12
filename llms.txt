@@ -8,8 +8,8 @@
 - MCP: https://mcp.reportroom.io/mcp (OAuth 2.1 for claude.ai connectors, or Bearer rr_live_ key for Claude Code)
 ## URL model
 - Each account gets a handle (subdomain), auto-generated at signup, renameable via POST /v1/handle or the set_handle tool. Published URLs look like https://<handle>.reportroom.io/<slug>. slug is unique per account; re-publishing updates in place.
-- Unverified accounts serve at https://<handle>.rrpreview.com/<slug> (noindex); on email verification all sites migrate to <handle>.reportroom.io (old links 301-redirect).
+- Unverified accounts serve at https://<handle>.rrpreview.com/<slug> (noindex); on email verification all documents migrate to <handle>.reportroom.io (old links 301-redirect).
 ## Quickstart
 - Clients: add https://mcp.reportroom.io/mcp as a custom MCP connector — Claude Code (claude mcp add --transport http), claude.ai (Settings > Connectors), ChatGPT (Developer mode > Connectors), or Codex (~/.codex/config.toml [mcp_servers]). OAuth signs in automatically, or use a Bearer rr_live_ key.
 - MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, then publish
-- REST: POST /v1/signup {email} -> api_key ; POST /v1/sites {content, content_format:"markdown", type:"deck", slug} with Authorization: Bearer -> url https://<handle>.reportroom.io/<slug>
+- REST: POST /v1/signup {email} -> api_key ; POST /v1/documents {content, content_format:"markdown", type:"deck", slug} with Authorization: Bearer -> url https://<handle>.reportroom.io/<slug>
