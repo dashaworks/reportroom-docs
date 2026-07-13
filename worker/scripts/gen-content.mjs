@@ -31,7 +31,7 @@ function renderSection(md, { id, pill }) {
     .replace(/<(\/?)h1>/g, "<$1h2>");
   // The doc title becomes the section heading: anchor id + brand pill.
   html = html.replace(/<h2>(.*?)<\/h2>/, `<h2 id="${id}">$1 <span class="pill">${pill}</span></h2>`);
-  // HTTP-method badges on endpoint headings (e.g. "POST /v1/sites").
+  // HTTP-method badges on endpoint headings (e.g. "POST /v1/documents").
   html = html.replace(/<h3>(GET|POST|PUT|PATCH|DELETE)(?= )/g, '<h3><span class="method">$1</span>');
   // Tables scroll inside the card wrapper.
   html = html.replace(/<table>/g, '<div class="tbl"><table>').replace(/<\/table>/g, "</table></div>");
