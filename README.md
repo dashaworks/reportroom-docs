@@ -17,7 +17,8 @@ viewed it.
 ```bash
 claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp
 ```
-Then call the `create_account` tool, save the API key it returns, and use `publish`.
+Then call the `create_account` tool, save the API key it returns, **verify your email**
+(publishing is blocked until you do), and use `publish`.
 
 **REST:**
 ```bash
@@ -25,7 +26,9 @@ Then call the `create_account` tool, save the API key it returns, and use `publi
 curl -sX POST https://api.reportroom.io/v1/signup \
   -H 'content-type: application/json' -d '{"email":"you@example.com"}'
 
-# 2. publish (Mode B: markdown -> deck)
+# 2. verify your email — click the link we send you (publishing is blocked until you do)
+
+# 3. publish (Mode B: markdown -> deck)
 curl -sX POST https://api.reportroom.io/v1/documents \
   -H "authorization: Bearer rr_live_..." -H 'content-type: application/json' \
   -d '{"content":"# Hello\n\nMy first **deck**.","content_format":"markdown","type":"deck","slug":"hello"}'
