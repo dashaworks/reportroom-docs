@@ -64,6 +64,11 @@ body{margin:0;font-family:'Inter Tight',ui-sans-serif,system-ui,-apple-system,Se
 .theme-toggle:hover{background:var(--surface-2)}
 .hero{padding:clamp(24px,5vw,64px) clamp(20px,5vw,36px) 0}
 .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-strong);font-weight:700}
+.endpoints{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px;padding:0}
+.endpoints .chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:600;color:var(--ink);text-decoration:none;font-size:13px}
+a.chip:hover{border-color:var(--accent-strong);text-decoration:none}
+.endpoints .chip .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.endpoints .chip code{background:none;border:none;padding:0;color:var(--accent-strong);font-size:12.5px}
 h1{font-size:clamp(38px,6vw,64px);line-height:.98;letter-spacing:-.03em;font-weight:800;margin:10px 0 6px;color:var(--ink)}
 h2{font-size:clamp(24px,3.5vw,34px);letter-spacing:-.02em;margin:44px 0 4px;border-top:1px solid var(--line);padding-top:28px;color:var(--ink)}
 h3{font-size:19px;margin:22px 0 6px;color:var(--ink)}
@@ -107,7 +112,12 @@ ${PAGE_CSS}</style></head><body>
 <p class="eyebrow">Developer Docs</p>
 <h1>ReportRoom API &amp; MCP</h1>
 <p>The publishing layer AI agents call directly: one call turns a deck or report into a beautiful, tracked live URL — and reports back who viewed it.</p>
-<p><a href="https://reportroom.io">reportroom.io</a> · API <code>https://api.reportroom.io</code> · MCP <code>https://mcp.reportroom.io/mcp</code> · <a href="/llms.txt">llms.txt</a></p>
+<ul class="endpoints">
+<li><a class="chip" href="https://reportroom.io"><span class="k">Site</span> reportroom.io</a></li>
+<li><span class="chip"><span class="k">API</span> <code>https://api.reportroom.io</code></span></li>
+<li><span class="chip"><span class="k">MCP</span> <code>https://mcp.reportroom.io/mcp</code></span></li>
+<li><a class="chip" href="/llms.txt"><span class="k">Agents</span> <code>llms.txt</code></a></li>
+</ul>
 
 ${BODY}
 </div>
