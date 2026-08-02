@@ -9,6 +9,12 @@
 ## URL model
 - Each account gets a handle (subdomain), auto-generated at signup (an opaque token like u7k2m9qp), renameable via POST /v1/handle or the set_handle tool (e.g. to acme). Published URLs look like https://<handle>.reportroom.io/<slug>. slug is unique per account; re-publishing updates in place.
 - Email verification is required to publish: a new account is unverified and gets an API key, but POST /v1/documents (and the publish tool) return 403 email_unverified until the emailed link is clicked. GET /v1/verify?token= flips the account to verified and unlocks publishing. While unverified the reported base is https://<handle>.rrpreview.com (noindex) — you can't publish to it until verified.
+## Capabilities
+- Publish HTML or markdown -> live URL (decks + reports; charts render server-side from an ECharts option JSON block; hosted images become styled figures/galleries; optional cover_image; the workspace logo badges every doc once set via /v1/branding).
+- Hosted images: POST /v1/images (or the upload_image tool) -> content-addressed path to reference in documents. 2 MB/file, plan caps, public or team visibility.
+- PDF export: POST /v1/documents/<slug>/export (or export_pdf tool) -> print-quality PDF. 5 credits; Idempotency-Key makes retries charge once; MCP returns a signed 1-hour download URL.
+- Data rooms (Business): gated document collections (email gate, passcode, NDA, expiry, allowlist) with per-viewer analytics + lead capture — 7 MCP tools from create_data_room to get_room_analytics.
+- Analytics: GET /v1/documents/<slug>/analytics (or get_analytics) -> 7-day views + relay-ready summary.
 ## Quickstart
 - Clients: add https://mcp.reportroom.io/mcp as a custom MCP connector — Claude Code (claude mcp add --transport http), claude.ai (Settings > Connectors), ChatGPT (Developer mode > Connectors), or Codex (~/.codex/config.toml [mcp_servers]). OAuth signs in automatically, or use a Bearer rr_live_ key.
 - MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, verify the email, then publish

@@ -25,7 +25,7 @@ Get one from `POST /v1/signup` (or the MCP `create_account` tool). Keys are show
 
 **Verify your email before publishing.** A new account receives a key immediately but is `unverified`; publishing stays blocked (`403 email_unverified`) until you click the link we email you. See [URL model & trust tiers](#url-model--trust-tiers).
 
-Errors are JSON: `{ "error": { "code": "STRING_CODE", "message": "what to do" } }`. Codes include `UNAUTHENTICATED`, `INVALID_BODY`, `INVALID_EMAIL`, `DISPOSABLE_EMAIL`, `EMAIL_EXISTS`, `INVALID_TOKEN`, `INVALID_SLUG`, `EMPTY_DOCUMENT`, `INVALID_VISIBILITY`, `CONTENT_BLOCKED`, `email_unverified`, `cap_reached`, `PLAN_REQUIRED`, `FORBIDDEN`, `DOCUMENT_NOT_FOUND`, `RATE_LIMITED`, `HANDLE_REJECTED`.
+Errors are JSON: `{ "error": { "code": "STRING_CODE", "message": "what to do" } }`. Codes include `UNAUTHENTICATED`, `INVALID_BODY`, `INVALID_EMAIL`, `DISPOSABLE_EMAIL`, `EMAIL_EXISTS`, `INVALID_TOKEN`, `INVALID_SLUG`, `EMPTY_DOCUMENT`, `INVALID_VISIBILITY`, `INVALID_COVER_IMAGE`, `CONTENT_BLOCKED`, `email_unverified`, `cap_reached`, `PLAN_REQUIRED`, `FORBIDDEN`, `DOCUMENT_NOT_FOUND`, `NOT_FOUND`, `RATE_LIMITED`, `HANDLE_REJECTED`, `TOO_LARGE`, `INSUFFICIENT_CREDITS`, `INVALID_IDEMPOTENCY_KEY`, `EXPORT_UNSUPPORTED_VISIBILITY`, `NOT_CONFIGURED`.
 
 ## URL model & trust tiers
 Every account gets a **handle** — a subdomain, auto-generated at signup (an opaque token like `u7k2m9qp`) and renameable to something friendlier like `acme` (see `POST /v1/handle`). Handles are lowercase letters/numbers/hyphens (no leading/trailing or doubled hyphens), 2–32 chars. A `slug` is unique **per account** (not global), 3–63 chars `[a-z0-9-]`; publishing the same slug again updates in place. Verified accounts' documents live at `https://<handle>.reportroom.io/<slug>`.
@@ -64,6 +64,9 @@ Response: { "data": { "url": "https://acme.reportroom.io/acme-pitch", "documentI
 - **Requires a verified email** — returns `403 email_unverified` otherwise (see [trust tiers](#url-model--trust-tiers)).
 - Mode A HTML is sanitized (scripts stripped; call `get_design_system` first for on-brand output).
 - Rich charts: embed `<script type="application/json" data-qd-chart>{…ECharts option…}</script>` — rendered to static SVG at publish.
+- **Images**: reference hosted images (see [POST /v1/images](#post-v1images)) by their `path`. An image-only paragraph renders as a styled figure (an adjacent *italic* line becomes its caption); consecutive image-only paragraphs become a responsive gallery grid. Up to 20 images per document.
+- Optional `cover_image` (a `/v1/images` `path` or an https URL): full-bleed cover behind a deck's first slide, or a top band on a report. Counts toward the 20-image budget; a bad value is `400 INVALID_COVER_IMAGE`.
+- If your workspace has a logo set ([branding](#get-v1branding)), each publish adds a small badge to the document automatically.
 - `slug` optional (auto-generated if omitted). Reserved slugs (`api`, `app`, `admin`, `mcp`, `dashboard`, …) are rejected.
 - Optional `replace_slug`: retire one of your live documents to free a plan slot for this publish. Optional `visibility`: `public` (default) or `team` (members-only; needs an active Team or Business plan, else `403 PLAN_REQUIRED`).
 - At the plan's document cap, publishing a *new* slug returns `409 cap_reached` (the response lists your live docs) — reuse a slug or pass `replace_slug`.
@@ -83,6 +86,17 @@ Bring a previously-unpublished document back live. Re-checks the email gate and 
 ```json
 Response: { "data": { "slug": "acme-pitch", "status": "live" } }
 ```
+
+## POST /v1/documents/{slug}/export
+Render one of your **live** documents to a print-quality PDF (A4, backgrounds included) and return the bytes (`content-type: application/pdf`). Requires auth. **Costs 5 credits**, charged only when the render succeeds — a failed render is never charged. Public/unlisted documents only for now (`400 EXPORT_UNSUPPORTED_VISIBILITY` for team-gated docs).
+```
+curl -X POST https://api.reportroom.io/v1/documents/acme-pitch/export \
+  -H "authorization: Bearer rr_live_..." \
+  -H "Idempotency-Key: my-export-1" -o acme-pitch.pdf
+```
+- `Idempotency-Key` (optional, 1–64 chars): a retried export with the same key re-renders but **charges exactly once** per document version. Response headers `x-export-charged` and `x-export-credits-remaining` report the burn.
+- `402 INSUFFICIENT_CREDITS` (with `required` and `balance`) when the wallet can't cover it — top up from the dashboard.
+- Rate limit: 20/hour.
 
 ## GET /v1/documents/{slug}/analytics
 Per-document view stats + a ready-to-relay summary. Requires auth.
@@ -104,6 +118,41 @@ Rename your subdomain. Moves all your docs to the new handle; old links redirect
 Request:  { "handle": "acme" }
 Response: { "data": { "handle": "acme", "moved": 3, "message": "…" } }
 ```
+
+## POST /v1/images
+Upload an image to reference in your documents. Requires auth + a verified email. Body is the **raw image bytes** (set the content-type) or JSON `{ "data": "<base64>", "kind"?, "visibility"? }`. PNG, JPEG, WebP or GIF (magic-byte validated — no SVG), **2 MB max**. Identical bytes at the same visibility dedupe to one slot.
+```json
+Response 201: { "data": { "id": "img_…", "url": "https://acme.reportroom.io/_img/org_…/<sha256>.png",
+                          "path": "/_img/org_…/<sha256>.png", "kind": "doc", "visibility": "public",
+                          "sha256": "…", "bytes": 12345, "content_type": "image/png", "deduped": false } }
+```
+- Query/body options: `kind=brand` (a logo asset — doesn't count against any per-document budget) · `visibility=team` (serves only to signed-in workspace members; needs Team/Business, else `403 PLAN_REQUIRED`).
+- Reference the host-agnostic `path` in your HTML/markdown — it survives handle renames.
+- Plan caps (total images per workspace): Free 10 · Pro 100 · Team 500 · Business 1000. At cap: `409 cap_reached` with `cap` and `used`.
+- Rate limit: 120/hour.
+
+## GET /v1/images
+List your images (newest first) with usage: `{ "data": { "images": […], "used": 7, "cap": 100 } }`. Requires auth.
+
+## DELETE /v1/images/{id}
+Delete an image — frees its quota slot; its URLs stop serving within seconds. Requires auth. `404 NOT_FOUND` if it isn't yours.
+
+## GET /v1/branding · PUT /v1/branding · DELETE /v1/branding
+Your workspace logo. Once set, **every document you publish afterwards** carries a small logo badge (changes reach each doc on its next publish). Requires auth; `PUT`/`DELETE` need the owner or an admin role.
+```json
+PUT request:  { "image_id": "img_…" }   // must be YOUR image with kind=brand and visibility=public
+GET response: { "data": { "logo": { "image_id": "img_…", "path": "/_img/…", "url": "https://…" } } }
+```
+`PUT` validation errors are distinct: `404 NOT_FOUND` (not your image / deleted), `400 NOT_BRAND` (upload it with `kind=brand`), `400 NOT_PUBLIC` (a team-visibility image would break on public documents). `DELETE` clears the logo (idempotent).
+
+## GET /v1/account
+Account status: handle, tier, url_base, org kind, your role in a team workspace. Requires auth. (Account **deletion** is deliberately not on the API — it's a two-step confirmed flow in the dashboard, so a leaked API key can never destroy the account that owns it.)
+
+## Data rooms (Business)
+Gated collections of documents for deal workflows — email-verification gate, passcode, NDA click-through, expiry, allowlists, per-viewer analytics and lead capture. REST surface: `POST/GET /v1/rooms`, `GET/PATCH /v1/rooms/{id}`, `PUT /v1/rooms/{id}/documents`, `POST /v1/rooms/{id}/viewers` (+ list/revoke), `GET /v1/rooms/{id}/analytics`. The same operations are first-class [MCP tools](./mcp.md#tools) — most agents drive rooms from there.
+
+## Custom domains (Team/Business)
+`POST /v1/domains` provisions your own hostname (e.g. `reports.acme.com`) and returns the DNS records to create; `GET /v1/domains` reports status; `DELETE /v1/domains/{hostname}` detaches. Agents can use the streaming `attach_domain` MCP tool instead.
 
 ## POST /v1/lint
 Pre-flight check an HTML document before publishing (missing viewport/og, stripped scripts, off-brand). No auth.
