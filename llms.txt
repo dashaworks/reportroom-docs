@@ -13,8 +13,11 @@
 - Publish HTML or markdown -> live URL (decks + reports; charts render server-side from an ECharts option JSON block; hosted images become styled figures/galleries; optional cover_image; the workspace logo badges every doc once set via /v1/branding).
 - Hosted images: POST /v1/images (or the upload_image tool) -> content-addressed path to reference in documents. 2 MB/file, plan caps, public or team visibility.
 - PDF export: POST /v1/documents/<slug>/export (or export_pdf tool) -> print-quality PDF. 5 credits; Idempotency-Key makes retries charge once; MCP returns a signed 1-hour download URL.
-- Data rooms (Business): gated document collections (email gate, passcode, NDA, expiry, allowlist) with per-viewer analytics + lead capture — 7 MCP tools from create_data_room to get_room_analytics.
+- Data rooms (Business): gated document collections served at https://<handle>.reportroom.io/room/<slug> (access modes public/email/passcode/allowlist; NDA + expiry + CRM-webhook settings) with per-viewer analytics + lead capture — 7 MCP tools from create_data_room to get_room_analytics (max 10 rooms/workspace, 200 viewers/room).
+- Custom domains (Team/Business): POST /v1/domains -> your own hostname + DNS records (CNAME + validation TXT); GET/DELETE to manage; MCP attach_domain streams provisioning progress.
 - Analytics: GET /v1/documents/<slug>/analytics (or get_analytics) -> 7-day views + relay-ready summary.
+## Plans & limits (per workspace)
+- Free: 10 docs, 10 images. Pro: 100 docs, 100 images. Team: unlimited docs, 500 images, + team-only visibility + custom domains. Business: unlimited docs, 1000 images, + data rooms. New accounts get 100 trial credits (PDF export costs 5). Over a cap -> 409 cap_reached; a gated feature off-plan -> 403 PLAN_REQUIRED/plan_required.
 ## Quickstart
 - Clients: add https://mcp.reportroom.io/mcp as a custom MCP connector — Claude Code (claude mcp add --transport http), claude.ai (Settings > Connectors), ChatGPT (Developer mode > Connectors), or Codex (~/.codex/config.toml [mcp_servers]). OAuth signs in automatically, or use a Bearer rr_live_ key.
 - MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, verify the email, then publish
