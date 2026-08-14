@@ -77,7 +77,7 @@ metadata above, which is what kicks off the connector's OAuth flow. Discovery an
 |---|---|---|
 | `upload_image` | Upload base64 image bytes (PNG/JPEG/WebP/GIF, 2 MB max, plan caps; `kind=brand` for a logo, `visibility=team` for members-only) | yes |
 | `list_images` | Your hosted images with used/cap | yes |
-| `delete_image` | Delete by id — frees the slot; URLs stop serving in seconds | yes |
+| `delete_image` | Delete by id — frees the slot immediately (public image URLs may stay cached up to 1h) | yes |
 
 **Export:**
 
@@ -114,3 +114,5 @@ Each account gets a **handle** — a subdomain, auto-generated on signup (an opa
 
 ## Recommended flow
 `create_account` (then have the human **verify their email** — publishing is blocked until they do) → `get_design_system` → author self-contained HTML following the tokens → `upload_image` for any figures/logo → `lint_document` → `publish` (with `cover_image` for a hero) → later, `get_analytics` to report back who viewed it. Optionally `set_handle` once to pick a nicer subdomain (old links redirect), `export_pdf` when the human wants a file, and `unpublish`/`republish` to retire or restore a document. For deal workflows on Business: `create_data_room` → `add_documents_to_room` → `set_room_access` → share the room link → `get_room_analytics` to report per-viewer engagement.
+
+Two `publish` behaviors worth knowing (details in the [REST reference](https://docs.reportroom.io/api)): raw-HTML documents opt into the design-system stylesheet by using a `<main class="deck">`/`<main class="report">` shell or a `var(--token)` reference — otherwise they're served exactly as authored; and **Free-plan** documents carry a "Published with ReportRoom" credit that every paid plan removes.

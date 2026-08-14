@@ -50,7 +50,7 @@ Limits are per **workspace** (org). Hitting a cap returns `409 cap_reached` (doc
 | Team | unlimited | 500 | ✓ | ✓ | — |
 | Business | unlimited | 1000 | ✓ | ✓ | ✓ |
 
-New accounts get **100 trial credits** (used by credit-metered actions like [PDF export](#post-v1documentsslugexport), 5 credits each). Team is billed per seat; Business bundles 3 seats.
+New accounts get **100 trial credits** (used by credit-metered actions like [PDF export](#post-v1documentsslugexport), 5 credits each). Team is billed per seat; Business bundles 3 seats. **Whitelabel** is a paid perk: Free-plan documents carry a "Published with ReportRoom" credit, every paid plan removes it.
 
 ---
 
@@ -87,10 +87,12 @@ Response: { "data": { "url": "https://acme.reportroom.io/acme-pitch", "documentI
 
 - **Requires a verified email** — returns `403 email_unverified` otherwise (see [trust tiers](#url-model--trust-tiers)).
 - Mode A HTML is sanitized (scripts stripped; call `get_design_system` first for on-brand output).
+- **Design-system auto-injection (Mode A):** if your HTML *opts in* — a root `<main class="deck">`/`<main class="report">` shell, or any reference to a ReportRoom token (`var(--…)`) — publish prepends the design-system stylesheet + webfont at the top of `<head>` (your own CSS comes later and always wins). HTML that opts into neither is served **exactly as authored** — the sheet's global reset is never forced on it. Idempotent: HTML that already carries the theme is left untouched.
 - Rich charts: embed `<script type="application/json" data-qd-chart>{…ECharts option…}</script>` — rendered to static SVG at publish.
 - **Images**: reference hosted images (see [POST /v1/images](#post-v1images)) by their `path`. An image-only paragraph renders as a styled figure (an adjacent *italic* line becomes its caption); consecutive image-only paragraphs become a responsive gallery grid. Up to 20 images per document.
 - Optional `cover_image` (a `/v1/images` `path` or an https URL): full-bleed cover behind a deck's first slide, or a top band on a report. Counts toward the 20-image budget; a bad value is `400 INVALID_COVER_IMAGE`.
 - If your workspace has a logo set ([branding](#get-v1branding)), each publish adds a small badge to the document automatically.
+- **Free-tier attribution:** documents published on the **Free** plan carry a small "Published with ReportRoom" credit (a fixed pill on Mode-A docs — injected post-sanitize so it can't be stripped — or the shell footer on Mode-B). Paid plans (Pro, Team, Business) are whitelabel — no credit.
 - `slug` optional (auto-generated if omitted). Reserved slugs (`api`, `app`, `admin`, `mcp`, `dashboard`, …) are rejected.
 - Optional `replace_slug`: retire one of your live documents to free a plan slot for this publish. Optional `visibility`: `public` (default) or `team` (members-only; needs an active Team or Business plan, else `403 PLAN_REQUIRED`).
 - At the plan's document cap, publishing a *new* slug returns `409 cap_reached` (the response lists your live docs) — reuse a slug or pass `replace_slug`.
@@ -208,6 +210,51 @@ Errors: `403 PAYMENT_REQUIRED` (free) / `403 plan_required` (Pro — upgrade to 
 
 Agents can use the streaming **`attach_domain`** MCP tool instead — with an `Accept: text/event-stream` request it emits `notifications/progress` frames as provisioning advances and returns the DNS records for the human to create.
 
+## Billing for companies
+
+Buying as a company? Checkout collects your legal entity name, billing address and tax/VAT
+number, and Stripe issues an invoice carrying them. You can also edit the details any time
+from the dashboard (Settings → Plan & billing → **Company & invoices**) or over the API.
+
+Prices are quoted **exclusive of any applicable taxes**. A VAT ID you provide appears on the
+invoice as your identity; we do not currently apply automatic tax calculation or reverse
+charge.
+
+### GET /v1/billing/profile
+Your workspace's company billing details. Readable by any workspace member. Requires auth.
+```json
+Response: { "data": { "profile": { "companyName": "Acme GmbH", "taxId": "DE123456789",
+                                   "taxIdType": "eu_vat", "country": "DE", "line1": "Hauptstr. 1",
+                                   "city": "Berlin", "postalCode": "10115",
+                                   "billingEmail": "ap@acme.com", "reference": "PO-2026-0042" },
+                      "invoice_ready": true } }
+```
+`invoice_ready` is `true` once there's enough for a bookable invoice (name + full address).
+
+### PUT /v1/billing/profile
+Save the details and push them to our payment processor, which is what prints them on your
+invoice. **Workspace owner only.** Send any subset; an empty string clears a field.
+```json
+Request: { "company_name": "Acme GmbH", "tax_id": "DE123456789", "tax_id_type": "eu_vat",
+           "country": "DE", "line1": "Hauptstr. 1", "city": "Berlin", "postal_code": "10115",
+           "billing_email": "ap@acme.com", "reference": "PO-2026-0042" }
+```
+- `tax_id_type` is one of `eu_vat`, `gb_vat`, `ch_vat`, `no_vat`, `us_ein`, `ca_bn`, `au_abn`, `nz_gst`, `ae_trn`, `sg_gst`, `in_gst`, `jp_cn`, `br_cnpj`, `mx_rfc`. Send `tax_id` and `tax_id_type` **together** (or neither) — `400 TAX_ID_INCOMPLETE` otherwise.
+- `country` is a 2-letter ISO code. A tax number our processor rejects outright returns `400 TAX_ID_REJECTED` with the reason — the rest of your details are still saved.
+- **A saved number is not yet a verified one.** Tax IDs are checked with the tax authority *asynchronously*, so a `200` means "stored", not "valid". The response and `GET /v1/billing/profile` carry `taxIdVerification`: `pending` (being checked), `verified`, `unverified` (the authority could not confirm it — it will still print on your invoices, so check for typos), or `unavailable` (no automatic check exists for that id type). Your workspace's Company & invoices page shows the same state.
+- `data.synced` is `false` when your workspace has no payment account yet: the details are stored and applied at your first subscription.
+
+### GET /v1/billing/invoices
+Your invoice history (subscriptions and credit top-ups), newest first, with links to the
+hosted invoice and its PDF. **Workspace owner only.** `?limit=` up to 100 (default 24).
+```json
+Response: { "data": { "invoices": [ { "number": "RR-0042", "created": 1786000000000,
+                                      "status": "paid", "total": 4900, "currency": "usd",
+                                      "hostedUrl": "https://…", "pdfUrl": "https://…",
+                                      "reason": "subscription_cycle" } ] } }
+```
+`total` is in the currency's minor unit (cents); `created` is milliseconds since epoch.
+
 ## POST /v1/lint
 Pre-flight check an HTML document before publishing (missing viewport/og, stripped scripts, off-brand). No auth.
 ```json
@@ -216,7 +263,7 @@ Response: { "data": { "ok": true, "issues": [ { "level": "warning", "code": "no-
 ```
 
 ## GET /v1/design-system?theme=
-Returns everything an agent should follow **before** authoring HTML. No auth. Response `data` keys: `theme`, `version`, `tokens` (CSS custom properties), `rules` (hard constraints), `components` (ready-to-paste snippets — slides, KPI cards, callouts, charts, figures, galleries, …), and `shells` (`{ deck, report }` document skeletons); a top-level `themes` lists the available themes. There is currently one theme — **`vibrant`** (Midnight Azure: ink-violet headings, azure accents on a white reading surface) — which is also the default.
+Returns everything an agent should follow **before** authoring HTML. No auth. Response `data` keys: `theme`, `version`, `tokens` (CSS custom properties), `rules` (hard constraints), `components` (ready-to-paste snippets — slides, KPI cards, callouts, charts, figures, galleries, …), and `shells` (`{ deck, report }` document skeletons); a top-level `themes` lists the available themes. There is currently one theme — **`vibrant`** (Midnight Azure: ink-violet headings, azure accents on a white reading surface) — which is also the default. The design system is **dark-mode aware**: documents adapt to the reader's `prefers-color-scheme`, and authors can force an ink slide with `class="slide dark"`.
 
 ## POST /v1/report-abuse
 Report an abusive published page. No auth, rate-limited.
