@@ -19,7 +19,7 @@
 - Analytics: GET /v1/documents/<slug>/analytics (or get_analytics) -> 7-day views + relay-ready summary.
 - Company billing: GET/PUT /v1/billing/profile (legal name, tax/VAT id, address -> printed on the Stripe invoice; PUT is owner-only) and GET /v1/billing/invoices (hosted + PDF links). Prices are exclusive of applicable taxes; no automatic tax calculation yet.
 ## Plans & limits (per workspace)
-- Free: 10 docs, 10 images. Pro: 100 docs, 100 images. Team: unlimited docs, 500 images, + team-only visibility + custom domains. Business: unlimited docs, 1000 images, + data rooms. New accounts get 100 trial credits (PDF export costs 5). Over a cap -> 409 cap_reached; a gated feature off-plan -> 403 PLAN_REQUIRED/plan_required.
+- Free: 50 docs, 10 images. Pro: 100 docs, 100 images. Team: unlimited docs, 500 images, + team-only visibility + custom domains. Business: unlimited docs, 1000 images, + data rooms. New accounts get 100 trial credits (PDF export costs 5). Over a cap -> 409 cap_reached; a gated feature off-plan -> 403 PLAN_REQUIRED/plan_required.
 ## Quickstart
 - Clients: add https://mcp.reportroom.io/mcp as a custom MCP connector — Claude Code (claude mcp add --transport http), claude.ai (Settings > Connectors), ChatGPT (Developer mode > Connectors), or Codex (~/.codex/config.toml [mcp_servers]). OAuth signs in automatically, or use a Bearer rr_live_ key.
 - MCP: claude mcp add --transport http reportroom https://mcp.reportroom.io/mcp ; call create_account, verify the email, then publish

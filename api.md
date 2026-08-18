@@ -45,7 +45,7 @@ Limits are per **workspace** (org). Hitting a cap returns `409 cap_reached` (doc
 
 | Plan | Live documents | Images | `team` visibility | Custom domains | Data rooms |
 |---|---|---|---|---|---|
-| Free | 10 | 10 | — | — | — |
+| Free | 50 | 10 | — | — | — |
 | Pro | 100 | 100 | — | — | — |
 | Team | unlimited | 500 | ✓ | ✓ | — |
 | Business | unlimited | 1000 | ✓ | ✓ | ✓ |
