@@ -63,7 +63,7 @@ metadata above, which is what kicks off the connector's OAuth flow. Discovery an
 |---|---|---|
 | `create_account` | Bootstrap a free account; returns an API key (shown once) | no |
 | `get_design_system` | Design tokens + component snippets + rules — call **before** authoring HTML | no |
-| `list_themes` | Available design themes | no |
+| `list_themes` | Available design themes — `prose` (calm editorial; default for markdown reports), `vibrant` (display styling; default for decks). Pick one, spec it with `get_design_system`, pass it on `publish` | no |
 | `lint_document` | Pre-flight check HTML before publish | no |
 | `publish` | Publish/update a deck or report (Mode A `html` or Mode B `content`+`type`); idempotent on `slug`; optional `visibility` (`team` = members-only, paid) and `cover_image`; returns the full live URL. **Requires a verified email** | yes |
 | `list_documents` | List your published documents | yes |
